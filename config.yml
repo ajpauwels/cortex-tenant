@@ -8,6 +8,7 @@ auth:
   egress:
     username: foo
     password: bar
+    jwt_path: /token/oidc-token
 
 log_level: debug
 timeout: 10s

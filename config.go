@@ -28,6 +28,7 @@ type config struct {
 		Egress struct {
 			Username string
 			Password string
+			JWTPath  string `yaml:"jwt_path"`
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -37,6 +38,7 @@ type processor struct {
 
 	auth struct {
 		egressHeader []byte
+		tokenPath    string
 	}
 }
 
@@ -71,6 +73,8 @@ func newProcessor(c config) *processor {
 	if c.Auth.Egress.Username != "" {
 		authString := []byte(fmt.Sprintf("%s:%s", c.Auth.Egress.Username, c.Auth.Egress.Password))
 		p.auth.egressHeader = []byte("Basic " + base64.StdEncoding.EncodeToString(authString))
+	} else if c.Auth.Egress.JWTPath != "" {
+		p.auth.tokenPath = c.Auth.Egress.JWTPath
 	}
 
 	// For testing
@@ -316,6 +320,12 @@ func (p *processor) send(clientIP net.Addr, reqID uuid.UUID, tenant string, wr *
 
 	if p.auth.egressHeader != nil {
 		req.Header.SetBytesV("Authorization", p.auth.egressHeader)
+	} else if p.auth.tokenPath != "" {
+		token, err := os.ReadFile(p.auth.tokenPath)
+		if err != nil {
+			return 0, nil, err
+		}
+		req.Header.Set("Authorization", "Bearer "+string(token))
 	}
 
 	req.SetRequestURI(p.cfg.Target)
